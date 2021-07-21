@@ -15,14 +15,14 @@ UUID_CHAR_BATTERY = '00000006-0000-3512-2118-0009af100700'
 # Anhui Huami auth service
 UUID_SVC_HUAMI_AUTH = '0000fee1-0000-1000-8000-00805f9b34fb'
 UUID_CHAR_AUTH = '00000009-0000-3512-2118-0009af100700'
-UUID_DESC_AUTH = '00002902-0000-1000-8000-00805f9b34fb'
+# UUID_DESC_AUTH = '00002902-0000-1000-8000-00805f9b34fb'
 
 # Heart Rate service
 UUID_SVC_HEART_RATE = '0000180d-0000-10008000-00805f9b34fb'
 UUID_CHAR_HRM_MEASURE = '00002a37-0000-1000-8000-00805f9b34fb'
 UUID_CHAR_HRM_CONTROL = '00002a39-0000-1000-8000-00805f9b34fb'
 
-CCCD_UUID = 0x2902
+# CCCD_UUID = 0x2902
 
 KEY = b'\xa7\x89\x95\xf2\x03\x88\xcbo-\xd7\xbbF\xa2R\x10I'
 
@@ -51,7 +51,7 @@ class AmazfitNeo(Peripheral):
     def auth(self) -> None:
         self.getServiceByUUID(UUID_SVC_HUAMI).getCharacteristics('00000020-0000-3512-2118-0009af100700')[0].write(b'\x01\x00')
         self.get_auth_char().write(b'\x01\x00')
-        self.get_auth_desc().write(b'\x01\x00', True)
+        # self.get_auth_desc().write(b'\x01\x00', True)
 
     def start_heartrate(self) -> None:
         self.get_heartrate_control_char().write(b'\x15\x01\x01', True)
@@ -155,8 +155,12 @@ def main():
 
     band.get_auth_char().write(struct.pack('<18s', b'\x01\x08' + KEY))
     band.waitForNotifications(5)
+    band.waitForNotifications(5)
+    band.waitForNotifications(5)
 
     band.get_auth_char().write(struct.pack('<2s', b'\x02\x08'))
+    band.waitForNotifications(5)
+    band.waitForNotifications(5)
     band.waitForNotifications(5)
 
 if __name__ == '__main__':
