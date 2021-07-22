@@ -11,11 +11,11 @@ import struct
 import sys
 
 # Device MAC address
-MAC_AMAZFIT_NEO = 'C1:CC:A3:0A:B1:94'
+MAC_AMAZFIT_NEO = 'AA:AA:AA:AA:AA:AA'
 
 # Auth key
-KEY = bytes.fromhex('0xa78995f20388cb6f2dd7bb46a2521049'[2:]) # where 0xa78995f20388cb6f2dd7bb46a2521049 is a key you got from github.com/argrento/huami-token
-
+KEY = bytes.fromhex('0xa12345b67890cd1e2fg3hi45j6789012'[2:]) # where 0xa12345b67890cd1e2fg3hi45j6789012 is a 32 bytes
+                                                              # key you got from github.com/argrento/huami-token
 # Anhui Huami service
 UUID_SVC_HUAMI = '0000fee0-0000-1000-8000-00805f9b34fb'
 UUID_CHAR_BATTERY = '00000006-0000-3512-2118-0009af100700'
