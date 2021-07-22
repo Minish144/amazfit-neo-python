@@ -240,7 +240,7 @@ def example():
 
     band.auth() # authorizing using provided auth key
 
-    print(f'Battery level: {band.read_battery()}')
+    print(f'Battery level: {band.read_battery()}') # getting battery level
 
     band.start_heartrate() # request heart rate measurements
 
