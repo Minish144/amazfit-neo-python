@@ -1,6 +1,6 @@
 # amazfit-neo-python
 
-## Enable bluetooth
+## Turn on bluetooth
 ```bash
 $ bluetoothctl
 
