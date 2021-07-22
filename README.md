@@ -1,5 +1,12 @@
 # amazfit-neo-python
 
+## Enable bluetooth
+```bash
+$ bluetoothctl
+
+$ power on
+```
+
 ## Installing dependencies
 ```bash
 $ python3 -m venv env

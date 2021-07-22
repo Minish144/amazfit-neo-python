@@ -1,3 +1,7 @@
+from sys import platform
+if platform != 'linux' and platform != 'linux2':
+    raise Exception(f'linux is the only supported OS, your platform is {platform}')
+
 from bluepy.btle import Peripheral, Service, Characteristic, DefaultDelegate, Descriptor
 from Crypto.Cipher import AES
 import threading
@@ -10,7 +14,7 @@ import sys
 MAC_AMAZFIT_NEO = 'C1:CC:A3:0A:B1:94'
 
 # Auth key
-KEY = b'\xa7\x89\x95\xf2\x03\x88\xcbo-\xd7\xbbF\xa2R\x10I'
+KEY = bytes.fromhex('0xa78995f20388cb6f2dd7bb46a2521049'[2:]) # where 0xa78995f20388cb6f2dd7bb46a2521049 is a key you got from github.com/argrento/huami-token
 
 # Anhui Huami service
 UUID_SVC_HUAMI = '0000fee0-0000-1000-8000-00805f9b34fb'
@@ -26,21 +30,32 @@ UUID_SVC_HEART_RATE = '0000180d-0000-10008000-00805f9b34fb'
 UUID_CHAR_HRM_MEASURE = '00002a37-0000-1000-8000-00805f9b34fb'
 UUID_CHAR_HRM_CONTROL = '00002a39-0000-1000-8000-00805f9b34fb'
 
-CCCD_UUID = 0x2902
-
 class Utils(object):
+    '''
+    Simple utils class
+    '''
     @staticmethod
     def encrypt(key, message):
         aes = AES.new(key, AES.MODE_ECB)
         return aes.encrypt(message)
 
 class AmazfitNeo(Peripheral):
+    '''
+    AmazfitNeo is a class which provides
+    you useful methods to work with
+    amazfit neo band
+    '''
+
     __notifications_thread: threading.Thread
 
     def __init__(self, MAC: str) -> Peripheral:
         super().__init__(MAC)
 
     def inspect(self) -> None:
+        '''
+        inspect printf available
+        services and its characteristics
+        '''
         svcs = self.getServices()
         for svc in svcs:
             print(f'\n       {svc.uuid}       ')
@@ -50,28 +65,50 @@ class AmazfitNeo(Peripheral):
         print('\n')
 
     def read_battery(self) -> any:
+        '''
+        read_battery returns
+        current battery level
+        '''
         char = self.get_battery_char()
         if char.supportsRead():
             bytes = char.read()
-            return struct.unpack('b', bytes[1:2])[0] if len(bytes) >= 2 else None
+            return float(struct.unpack('b', bytes[1:2])[0]) if len(bytes) >= 2 else None
         return None
-        
+
 
     def auth(self) -> None:
-        self.get_auth_desc().write(b"\x01\x00", True)
+        '''
+        auth authorizes the band
+        with provided KEY
+        '''
+        self.get_auth_desc().write(b'\x01\x00', True)
         self.waitForNotifications(0.5)
 
         self.get_auth_char().write(struct.pack('<2s', b'\x02\x00'))
         self.waitForNotifications(0.5)
 
     def start_heartrate(self) -> None:
+        '''
+        start_heartrate requests band
+        for heart rate measurements
+        notifications
+        '''
         self.get_heartrate_control_char().write(b'\x15\x01\x01', True)
 
     def stop_heartrate(self) -> None:
+        '''
+        stop_heartrate requests band
+        to stop heart rate measurements
+        notifications
+        '''
         self.get_heartrate_control_char().write(b'\x15\x01\x00', True)
         self.__notifications_thread.do_run = False
 
-    def get_heartrate_control_measure_char(self) -> Characteristic:
+    def get_heartrate_measurement_char(self) -> Characteristic:
+        '''
+        get_heartrate_measurement_char returns
+        control measurements characteristic
+        '''
         svc_heartrate = self.getServiceByUUID(UUID_SVC_HEART_RATE)
         chars = svc_heartrate.getCharacteristics(UUID_CHAR_HRM_MEASURE)
         if len(chars) != 0:
@@ -80,6 +117,10 @@ class AmazfitNeo(Peripheral):
             raise Exception(f'failed to get heartrate measure char, could not find such in {UUID_SVC_HEART_RATE} service')
 
     def get_heartrate_control_char(self) -> Characteristic:
+        '''
+        get_heartrate_measurement_char returns
+        control hr characteristic
+        '''
         svc_heartrate = self.getServiceByUUID(UUID_SVC_HEART_RATE)
         chars = svc_heartrate.getCharacteristics(UUID_CHAR_HRM_CONTROL)
         if len(chars) != 0:
@@ -88,6 +129,10 @@ class AmazfitNeo(Peripheral):
             raise Exception(f'failed to get heartrate control char, could not find such in {UUID_SVC_HEART_RATE} service')
 
     def get_auth_desc(self) -> Characteristic:
+        '''
+        get_auth_desct returns
+        auth descriptor
+        '''
         svc_heartrate = self.getServiceByUUID(UUID_SVC_HUAMI_AUTH)
         descs = svc_heartrate.getDescriptors(UUID_DESC_AUTH)
         if len(descs) != 0:
@@ -96,6 +141,10 @@ class AmazfitNeo(Peripheral):
             raise Exception(f'failed to get auth char, could not find such in {UUID_SVC_HEART_RATE} service')
 
     def get_auth_char(self) -> Characteristic:
+        '''
+        get_auth_char returns
+        auth characteristic
+        '''
         svc_heartrate = self.getServiceByUUID(UUID_SVC_HUAMI_AUTH)
         chars = svc_heartrate.getCharacteristics(UUID_CHAR_AUTH)
         if len(chars) != 0:
@@ -104,6 +153,10 @@ class AmazfitNeo(Peripheral):
             raise Exception(f'failed to get auth char, could not find such in {UUID_SVC_HEART_RATE} service')
 
     def get_battery_char(self) -> Characteristic:
+        '''
+        get_battery_char returns
+        battery info characteristic
+        '''
         svc_battery = self.getServiceByUUID(UUID_SVC_HUAMI)
         chars = svc_battery.getCharacteristics(UUID_CHAR_BATTERY)
         if len(chars) != 0:
@@ -111,28 +164,41 @@ class AmazfitNeo(Peripheral):
         else:
             raise Exception(f'failed to get battery char, could not find such in {UUID_SVC_HUAMI} service')
 
-    def listen_to_notifications(self) -> None:
+    def listen_to_notifications(self) -> threading.Thread:
+        '''
+        listen_to_notifications starts
+        notification listening thread
+        '''
         self.__notifications_thread = threading.Thread(
             target=self.__start_notifications_listening_thread
         )
         self.__notifications_thread.start()
+        return self.__notifications_thread
 
     def __start_notifications_listening_thread(self) -> None:
         t = threading.currentThread()
         while getattr(t, 'do_run', True):
-            self.waitForNotifications(0.5)
+            self.waitForNotifications(1)
 
 class NotificationDelegate(DefaultDelegate):
+    '''
+    NotificationDelegate is a
+    DefaultDelegate class with
+    overridden notification handler
+    '''
     def __init__(self, device: AmazfitNeo):
         DefaultDelegate.__init__(self)
         self.device = device
 
     def handleNotification(self, hnd, data):
+        '''
+        handleNotification handles new notification
+        '''
         if hnd == self.device.get_auth_char().getHandle():
             if data[:3] == b'\x10\x01\x01':
                 self.device.get_auth_char().write(struct.pack('<2s', b'\x02\x00'))
                 self.device.waitForNotifications(0.5)
-            
+
             elif data[:3] == b'\x10\x01\x04':
                 print('Sending key failed')
 
@@ -150,11 +216,11 @@ class NotificationDelegate(DefaultDelegate):
 
             elif data[:3] == b'\x10\x03\x01':
                 print('Auth completed!')
-            
+
             else:
                 print('Auth failed')
 
-        elif hnd == self.device.get_heartrate_control_measure_char().getHandle():
+        elif hnd == self.device.get_heartrate_measurement_char().getHandle():
             self.__handle_heartrate_notification(hnd, data)
         else:
             print(f'Unrecognized data: {data}')
@@ -163,25 +229,23 @@ class NotificationDelegate(DefaultDelegate):
         rate = struct.unpack('bb', data)[1]
         print('Heart Rate: ', str(rate))
 
-def main():
+def example():
     print('Starting...')
 
     band = AmazfitNeo(MAC_AMAZFIT_NEO) # getting band class
     print('Connected successfully!')
 
     notificationHandler = NotificationDelegate(band)
-    band.setDelegate(notificationHandler)
+    band.setDelegate(notificationHandler) # setting notification handler
 
-    band.auth()
+    band.auth() # authorizing using provided auth key
 
-    timestart = 0
-    while True:
-        print(timestart)
-        print(band.read_battery())
-        time.sleep(10)
-        timestart += 10
+    print(f'Battery level: {band.read_battery()}')
+
+    band.start_heartrate() # request heart rate measurements
+
+    band.listen_to_notifications() # start listening to HR notifications
 
 if __name__ == '__main__':
-    main()
+    example()
 
-    
