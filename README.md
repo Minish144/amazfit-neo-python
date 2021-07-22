@@ -4,7 +4,7 @@
 ```bash
 $ bluetoothctl
 
-$ power on
+[bluetooth] power on
 ```
 
 ## Installing dependencies
