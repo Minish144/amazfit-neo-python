@@ -244,8 +244,6 @@ def example():
 
     band.start_heartrate() # request heart rate measurements
 
-    band.listen_to_notifications() # start listening to HR notifications
-
 if __name__ == '__main__':
     example()
 
