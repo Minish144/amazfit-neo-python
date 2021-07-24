@@ -4,18 +4,23 @@ if platform != 'linux' and platform != 'linux2':
 
 from bluepy.btle import Peripheral, Service, Characteristic, DefaultDelegate, Descriptor
 from Crypto.Cipher import AES
+from dotenv import load_dotenv
 import threading
 import binascii
 import time
 import struct
 import sys
+import os
+
+load_dotenv()
 
 # Device MAC address
-MAC_AMAZFIT_NEO = 'AA:AA:AA:AA:AA:AA'
+MAC_AMAZFIT_NEO = os.getenv('MAC')
 
 # Auth key
-KEY = bytes.fromhex('0xa12345b67890cd1e2fg3hi45j6789012'[2:]) # where 0xa12345b67890cd1e2fg3hi45j6789012 is a 32 bytes
-                                                              # key you got from github.com/argrento/huami-token
+
+KEY = bytes.fromhex(os.getenv('KEY')[2:]) # where key is a 32 bytes key in .env file
+                                          # you got from github.com/argrento/huami-token
 # Anhui Huami service
 UUID_SVC_HUAMI = '0000fee0-0000-1000-8000-00805f9b34fb'
 UUID_CHAR_BATTERY = '00000006-0000-3512-2118-0009af100700'
@@ -45,8 +50,6 @@ class AmazfitNeo(Peripheral):
     you useful methods to work with
     amazfit neo band
     '''
-
-    __notifications_thread: threading.Thread
 
     def __init__(self, MAC: str) -> Peripheral:
         super().__init__(MAC)
@@ -102,7 +105,6 @@ class AmazfitNeo(Peripheral):
         notifications
         '''
         self.get_heartrate_control_char().write(b'\x15\x01\x00', True)
-        self.__notifications_thread.do_run = False
 
     def get_heartrate_measurement_char(self) -> Characteristic:
         '''
@@ -163,22 +165,6 @@ class AmazfitNeo(Peripheral):
             return chars[0]
         else:
             raise Exception(f'failed to get battery char, could not find such in {UUID_SVC_HUAMI} service')
-
-    def listen_to_notifications(self) -> threading.Thread:
-        '''
-        listen_to_notifications starts
-        notification listening thread
-        '''
-        self.__notifications_thread = threading.Thread(
-            target=self.__start_notifications_listening_thread
-        )
-        self.__notifications_thread.start()
-        return self.__notifications_thread
-
-    def __start_notifications_listening_thread(self) -> None:
-        t = threading.currentThread()
-        while getattr(t, 'do_run', True):
-            self.waitForNotifications(1)
 
 class NotificationDelegate(DefaultDelegate):
     '''
