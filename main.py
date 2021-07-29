@@ -56,7 +56,7 @@ class AmazfitNeo(Peripheral):
 
     def inspect(self) -> None:
         '''
-        inspect printf available
+        inspect prints available
         services and its characteristics
         '''
         svcs = self.getServices()
