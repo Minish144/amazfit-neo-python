@@ -1,2 +1,7 @@
-.env
+# environment
 env
+.env
+
+# vscode
+
+.vscode
