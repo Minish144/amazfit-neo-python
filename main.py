@@ -229,6 +229,9 @@ def example():
     print(f'Battery level: {band.read_battery()}') # getting battery level
 
     band.start_heartrate() # request heart rate measurements
+    for _ in range(60):
+        band.waitForNotifications(0.5)
+        time.sleep(1)
 
 if __name__ == '__main__':
     example()
